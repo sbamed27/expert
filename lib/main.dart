@@ -69,12 +69,16 @@ class MapUtils {
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
+  final thresholdWidth = 700;
+  final maxEntre = 850;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth >= 900) {
+          if (constraints.maxWidth >= thresholdWidth) {
             return _buildWideLayout(context);
           } else {
             return _buildNarrowLayout(context);
@@ -85,6 +89,7 @@ class MyHomePage extends StatelessWidget {
   }
 
   Widget _buildNarrowLayout(BuildContext context) {
+    double ss = MediaQuery.of(context).size.width;
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -99,8 +104,9 @@ class MyHomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildHeader(),
-              _buildLocationButton(), // Agrandir ce bouton
-              _buildButtonsRow(), // Distribuer les boutons WhatsApp et Appeler dans une rangée
+              _buildLocationButton(ss), // Agrandir ce bouton
+              _buildButtonsRow(
+                  ss), // Distribuer les boutons WhatsApp et Appeler dans une rangée
               _buildImageSection(context),
             ],
           ),
@@ -110,6 +116,7 @@ class MyHomePage extends StatelessWidget {
   }
 
   Widget _buildWideLayout(BuildContext context) {
+    double ss = MediaQuery.of(context).size.width;
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -119,19 +126,35 @@ class MyHomePage extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 30),
-              _buildLocationButton(), // Agrandir ce bouton aussi en mode wide
-              const SizedBox(height: 20),
-              _buildButtonsRow(), // Distribuer les boutons dans une rangée
-              const SizedBox(height: 40),
-              _buildImageSection(context),
-            ],
-          ),
+        child: Row(
+          children: [
+            // Left side for content
+            Expanded(
+              flex: 1,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildHeader(),
+                    //const SizedBox(height: 30),
+                    _buildLocationButton(ss),
+                    //const SizedBox(height: 20),
+                    _buildButtonsRow(ss),
+                  ],
+                ),
+              ),
+            ),
+            // Right side for image
+            Expanded(
+              flex: 1,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: _buildImageSection(context),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -190,7 +213,7 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationButton() {
+  Widget _buildLocationButton(double ss) {
     return ElevatedButton.icon(
       onPressed: () => MapUtils.openMap(),
       icon: const Icon(Icons.location_on, color: Colors.white),
@@ -213,20 +236,23 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCallButton() {
+  Widget _buildCallButton(double w) {
+    bool entre = w >= thresholdWidth && w < maxEntre;
     return ElevatedButton.icon(
       onPressed: () => MapUtils.makePhoneCall(),
       icon: const Icon(Icons.call, color: Colors.white),
-      label: const Text(
+      label: Text(
         "Appeler",
         style: TextStyle(
-          fontSize: 18,
+          fontSize: entre ? 13 : 18,
           color: Colors.white,
         ),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.green,
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+        padding: !entre
+            ? const EdgeInsets.symmetric(horizontal: 30, vertical: 15)
+            : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -235,7 +261,8 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildWhatsAppButton() {
+  Widget _buildWhatsAppButton(double w) {
+    bool entre = w >= thresholdWidth && w < maxEntre;
     return ElevatedButton.icon(
       onPressed: () => MapUtils.openWhatsApp(),
       icon: SvgPicture.asset(
@@ -244,16 +271,18 @@ class MyHomePage extends StatelessWidget {
         width: 24,
         height: 24,
       ),
-      label: const Text(
+      label: Text(
         "WhatsApp",
         style: TextStyle(
-          fontSize: 18,
+          fontSize: entre ? 13 : 18,
           color: Colors.white,
         ),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.green,
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+        padding: entre
+            ? null
+            : const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -262,14 +291,17 @@ class MyHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildButtonsRow() {
+  Widget _buildButtonsRow(double w) {
+    bool entre = w >= thresholdWidth && w < maxEntre;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: entre
+          ? const EdgeInsets.symmetric(horizontal: 5.0)
+          : const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildWhatsAppButton(),
-          _buildCallButton(),
+          _buildWhatsAppButton(w),
+          _buildCallButton(w),
         ],
       ),
     );
@@ -293,8 +325,12 @@ class MyHomePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         child: Image.asset(
           "assets/images/interface.jpg",
-          width: screenSize.width * 0.85,
-          height: screenSize.height * 0.3,
+          width: screenSize.width < thresholdWidth
+              ? screenSize.width * 0.85
+              : screenSize.width * 1.4,
+          height: screenSize.width < thresholdWidth
+              ? screenSize.height * 0.3
+              : screenSize.height * 0.75,
           fit: BoxFit.contain,
         ),
       ),
